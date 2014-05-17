@@ -10,6 +10,7 @@
             if ($(this).is('input[type="date"]')) {
                 $(this).each(createDatePicker);
                 $(this).each(controlDatePicker);
+                $(this).each(chooseDate);
             } else {
                 console.error('Illegal choice');
             }
@@ -24,56 +25,52 @@
             //Enable datepicker controls
 
             $('.year-down').click(function() {
-                yearStep--;
-                var currentCalendar = calendar.createTable(yearStep, monthStep);
-                $(this).next().text(currentCalendar.calendarYear);
-                $('#calendar-table').html(currentCalendar.calendarBody);
+                changeYear(false);
             });
             $('.year-up').click(function() {
-                yearStep++;
-                var currentCalendar = calendar.createTable(yearStep, monthStep);
-                $(this).prev().text(currentCalendar.calendarYear);
-                $('#calendar-table').html(currentCalendar.calendarBody);
+                changeYear(true);
             });
             $('.month-down').click(function() {
-                monthStep--;
-                var currentCalendar = calendar.createTable(yearStep, monthStep);
-                refreshMonthIndex(currentCalendar.calendarMonthIndex);
-                currentCalendar = calendar.createTable(yearStep, monthStep);
-                $(this).next().text(currentCalendar.calendarMonth);
-                $('.year-value').text(currentCalendar.calendarYear);
-                $('#calendar-table').html(currentCalendar.calendarBody);
+                changeMonth(false);
             });
             $('.month-up').click(function() {
-                monthStep++;
-                var currentCalendar = calendar.createTable(yearStep, monthStep);
-                refreshMonthIndex(currentCalendar.calendarMonthIndex);
-                currentCalendar = calendar.createTable(yearStep, monthStep);
-                $(this).prev().text(currentCalendar.calendarMonth);
-                $('.year-value').text(currentCalendar.calendarYear);
-                $('#calendar-table').html(currentCalendar.calendarBody);
+                changeMonth(true);
             });
 
             //Set the date input value by click
 
-            $('#calendar-table').on('click', 'td:not(.not-current-month)', function() {
-                var chosenYear = $('.year-value').text();
-                var chosenMonth = $('.month-value').text();
-                var chosenDay = $(this).text();
-                var dateInput = $(this).parents('#datepicker').prev();
-                var chosenMonthIndex;
-                var monthList = ['Январь', 'Февраль', 'Март', 'Апрель', 'Май', 'Июнь', 'Июль', 'Август', 'Сентябрь', 'Октябрь', 'Ноябрь', 'Декабрь'];
-                for(var i = 0; i < monthList.length; i++) {
-                    if(chosenMonth === monthList[i]) {
-                        chosenMonthIndex = i + 1;
-                        break;
-                    }
+            function changeYear(direction) {
+                if(direction) {
+                    yearStep++;
+                    var currentCalendar = calendar.createTable(yearStep, monthStep);
+                    $('.year-value').text(currentCalendar.calendarYear);
+                    $('#calendar-table').html(currentCalendar.calendarBody);
+                } else {
+                    yearStep--;
+                    currentCalendar = calendar.createTable(yearStep, monthStep);
+                    $('.year-value').text(currentCalendar.calendarYear);
+                    $('#calendar-table').html(currentCalendar.calendarBody);
                 }
-                chosenMonthIndex = addZero(chosenMonthIndex);
-                chosenDay = addZero(chosenDay);
-                dateInput.val(chosenYear + '-' + chosenMonthIndex + '-' + chosenDay);
-            });
-            function changeMonth()
+            }
+            function changeMonth(direction) {
+                if(direction) {
+                    monthStep++;
+                    var currentCalendar = calendar.createTable(yearStep, monthStep);
+                    refreshMonthIndex(currentCalendar.calendarMonthIndex);
+                    currentCalendar = calendar.createTable(yearStep, monthStep);
+                    $('.month-value').text(currentCalendar.calendarMonth);
+                    $('.year-value').text(currentCalendar.calendarYear);
+                    $('#calendar-table').html(currentCalendar.calendarBody);
+                } else {
+                    monthStep--;
+                    currentCalendar = calendar.createTable(yearStep, monthStep);
+                    refreshMonthIndex(currentCalendar.calendarMonthIndex);
+                    currentCalendar = calendar.createTable(yearStep, monthStep);
+                    $(this).next().text(currentCalendar.calendarMonth);
+                    $('.year-value').text(currentCalendar.calendarYear);
+                    $('#calendar-table').html(currentCalendar.calendarBody);
+                }
+            }
             function refreshMonthIndex(index) {
                 if(index === -1) {
                     monthStep += 12;
@@ -103,9 +100,27 @@
             //calendarTableInner = $('#calendar-table');
         }
 
-        function changeMonthYear() {
-
+        function chooseDate() {
+            $('#calendar-table').on('click', 'td:not(.not-current-month)', function() {
+                var chosenYear = $('.year-value').text();
+                var chosenMonth = $('.month-value').text();
+                var chosenDay = $(this).text();
+                var dateInput = $(this).parents('#datepicker').prev();
+                var chosenMonthIndex;
+                var monthList = ['Январь', 'Февраль', 'Март', 'Апрель', 'Май', 'Июнь', 'Июль', 'Август', 'Сентябрь', 'Октябрь', 'Ноябрь', 'Декабрь'];
+                for(var i = 0; i < monthList.length; i++) {
+                    if(chosenMonth === monthList[i]) {
+                        chosenMonthIndex = i + 1;
+                        break;
+                    }
+                }
+                chosenMonthIndex = addZero(chosenMonthIndex);
+                chosenDay = addZero(chosenDay);
+                dateInput.val(chosenYear + '-' + chosenMonthIndex + '-' + chosenDay);
+            });
         }
+
+        //Calendar object constructor
 
         function MonthCalendar(year, month) {
             this.year = year;
