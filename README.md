@@ -6,19 +6,16 @@ Lightweight datepicker with separate year and month changing, based on jQuery an
 *How to use
 
  - Download latest release of plugin and jQuery library and add it between <head></head> tags of your HTML-file;
- - In body of the HTML-file create div with input[type="date"] (important!) inside and associated label after this input. 
+ - In body of the HTML-file create div with input type="date" (important!) inside and associated label after this input.
  
- example:
- 
- <div class="example">
-    <input id="some-date-input" type="date">
-    <label for="some-date-input">Choose Date</label>
- </div>
+
  
  
 - Initialize plugin:
 
     $('#some-date-input').simpleDatepicker();
+
+- Finally, add your css for styling calendar table and label. That's all! :)
     
     
 =============================================================================================================================
