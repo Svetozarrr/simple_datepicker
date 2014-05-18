@@ -213,3 +213,15 @@ pip-log.txt
 
 #Mr Developer
 .mr.developer.cfg
+
+jquery-1.11.0.min.js
+.idea/.name
+.idea/encodings.xml
+.idea/everad_datepicker.iml
+.idea/misc.xml
+.idea/modules.xml
+.idea/scopes/scope_settings.xml
+.idea/vcs.xml
+.idea/workspace.xml
+index.html
+test.js
