@@ -4,11 +4,12 @@
         var settings = $.extend({}, {
             startYear: new Date().getFullYear(),
             startMonth: new Date().getMonth() + 1
-        });
+        }, options);
 
         return this.each(function(){
             if ($(this).is('input[type="date"]')) {
                 $(this).each(createDatePicker);
+                $(this).each(toggleDatePicker);
                 $(this).each(controlDatePicker);
                 $(this).each(chooseDate);
             } else {
@@ -16,59 +17,78 @@
             }
         });
 
+        function createDatePicker() {
+            var calendarObject = new MonthCalendar(settings.startYear, settings.startMonth);
+            var calendarWrapper = $(this).parent();
+            calendarWrapper.addClass('datepicker-wrapper').css('display', 'inline-block');
+            calendarWrapper.css('position', 'relative');
+            $('<div class="datepicker"></div>').appendTo(calendarWrapper);
+            var datePickerContainer = calendarWrapper.find('.datepicker');
+            $('<div class="calendar-header"></div>').prependTo(datePickerContainer);
+            $('<span class="visible-year"><span class="year-down date-control"> < </span><span class="year-value">'
+                + calendarObject.createTable().calendarYear
+                + '</span><span class="year-up date-control"> > </span></span>').prependTo(datePickerContainer.find('.calendar-header'));
+
+            $('<span class="visible-month"><span class="month-down date-control"> < </span><span class="month-value">'
+                + calendarObject.createTable().calendarMonth
+                + '</span><span class="month-up date-control"> > </span></span>').appendTo(datePickerContainer.find('.calendar-header'));
+            $('<div class="calendar-table">' + calendarObject.createTable().calendarBody + '</div>').appendTo(datePickerContainer);
+            calendarWrapper.find(".datepicker").css('position', 'absolute').hide();
+            calendarWrapper.find('.date-control').css('cursor', 'pointer');
+            $(this).hide();
+        }
 
         function controlDatePicker() {
-            var calendar = new MonthCalendar(settings.startYear, settings.startMonth);
+            var calendarObject = new MonthCalendar(settings.startYear, settings.startMonth);
             var yearStep = 0;
             var monthStep = 0;
+            var yearDown = $(this).parent().find('.year-down');
+            var yearUp = $(this).parent().find('.year-up');
+            var monthDown = $(this).parent().find('.month-down');
+            var monthUp = $(this).parent().find('.month-up');
 
             //Enable datepicker controls
 
-            $('.year-down').click(function() {
-                changeYear(false);
-            });
-            $('.year-up').click(function() {
-                changeYear(true);
-            });
-            $('.month-down').click(function() {
-                changeMonth(false);
-            });
-            $('.month-up').click(function() {
-                changeMonth(true);
-            });
+            yearDown.click({direction: false}, changeYear);
+            yearUp.click({direction: true}, changeYear);
+            monthDown.click({direction: false}, changeMonth);
+            monthUp.click({direction: true}, changeMonth);
 
-            //Set the date input value by click
-
-            function changeYear(direction) {
-                if(direction) {
+            function changeYear(event) {
+                var yearValue = $(this).parent().find('.year-value');
+                var calendarTable = $(this).parents('.calendar-header').next();
+                if(event.data.direction) {
                     yearStep++;
-                    var currentCalendar = calendar.createTable(yearStep, monthStep);
-                    $('.year-value').text(currentCalendar.calendarYear);
-                    $('#calendar-table').html(currentCalendar.calendarBody);
+                    var currentCalendar = calendarObject.createTable(yearStep, monthStep);
+                    yearValue.text(currentCalendar.calendarYear);
+                    calendarTable.html(currentCalendar.calendarBody);
                 } else {
                     yearStep--;
-                    currentCalendar = calendar.createTable(yearStep, monthStep);
-                    $('.year-value').text(currentCalendar.calendarYear);
-                    $('#calendar-table').html(currentCalendar.calendarBody);
+                    currentCalendar = calendarObject.createTable(yearStep, monthStep);
+                    yearValue.text(currentCalendar.calendarYear);
+                    calendarTable.html(currentCalendar.calendarBody);
                 }
             }
-            function changeMonth(direction) {
-                if(direction) {
+            function changeMonth(event) {
+                var monthValue = $(this).parent().find('.month-value');
+                var yearValue = $(this).parent().find('.year-value');
+                var calendarTable = $(this).parents('.calendar-header').next();
+                if(event.data.direction) {
                     monthStep++;
-                    var currentCalendar = calendar.createTable(yearStep, monthStep);
+                    var currentCalendar = calendarObject.createTable(yearStep, monthStep);
                     refreshMonthIndex(currentCalendar.calendarMonthIndex);
-                    currentCalendar = calendar.createTable(yearStep, monthStep);
-                    $('.month-value').text(currentCalendar.calendarMonth);
-                    $('.year-value').text(currentCalendar.calendarYear);
-                    $('#calendar-table').html(currentCalendar.calendarBody);
+                    currentCalendar = calendarObject.createTable(yearStep, monthStep);
+                    monthValue.text(currentCalendar.calendarMonth);
+                    yearValue.text(currentCalendar.calendarYear);
+                    calendarTable.html(currentCalendar.calendarBody);
                 } else {
                     monthStep--;
-                    currentCalendar = calendar.createTable(yearStep, monthStep);
+                    currentCalendar = calendarObject.createTable(yearStep, monthStep);
                     refreshMonthIndex(currentCalendar.calendarMonthIndex);
-                    currentCalendar = calendar.createTable(yearStep, monthStep);
-                    $(this).next().text(currentCalendar.calendarMonth);
-                    $('.year-value').text(currentCalendar.calendarYear);
-                    $('#calendar-table').html(currentCalendar.calendarBody);
+                    currentCalendar = calendarObject.createTable(yearStep, monthStep);
+                    monthValue.text(currentCalendar.calendarMonth);
+                    yearValue.text(currentCalendar.calendarYear);
+                    calendarTable.html(currentCalendar.calendarBody);
                 }
             }
             function refreshMonthIndex(index) {
@@ -82,30 +102,18 @@
             }
         }
 
-        function createDatePicker() {
-            var calendar = new MonthCalendar(settings.startYear, settings.startMonth);
-            var calendarWrapper = $(this).parent();
 
-            $('<div id="datepicker"></div>').appendTo(calendarWrapper);
-            var datePickerContainer = $('#datepicker');
-            $('<div class="calendar-header"></div>').prependTo(datePickerContainer);
-            $('<span class="visible-year"><span class="year-down"> < </span><span class="year-value">'
-                + calendar.createTable().calendarYear
-                + '</span><span class="year-up"> > </span></span>').prependTo('.calendar-header');
-
-            $('<span class="visible-month"><span class="month-down"> < </span><span class="month-value">'
-                + calendar.createTable().calendarMonth
-                + '</span><span class="month-up"> > </span></span>').appendTo('.calendar-header');
-            $('<div id="calendar-table">' + calendar.createTable().calendarBody + '</div>').appendTo(datePickerContainer);
-            //calendarTableInner = $('#calendar-table');
-        }
 
         function chooseDate() {
-            $('#calendar-table').on('click', 'td:not(.not-current-month)', function() {
-                var chosenYear = $('.year-value').text();
-                var chosenMonth = $('.month-value').text();
+            var calendarTable = $(this).parent().find('.calendar-table');
+            var monthValue = $(this).parent().find('.month-value');
+            var yearValue = $(this).parent().find('.year-value');
+            calendarTable.on('click', 'td:not(.not-current-month)', function() {
+                var chosenYear = yearValue.text();
+                var chosenMonth = monthValue.text();
                 var chosenDay = $(this).text();
-                var dateInput = $(this).parents('#datepicker').prev();
+                var dateInput = $(this).parents('.datepicker').prevAll('input');
+                console.log(dateInput);
                 var chosenMonthIndex;
                 var monthList = ['Январь', 'Февраль', 'Март', 'Апрель', 'Май', 'Июнь', 'Июль', 'Август', 'Сентябрь', 'Октябрь', 'Ноябрь', 'Декабрь'];
                 for(var i = 0; i < monthList.length; i++) {
@@ -117,7 +125,35 @@
                 chosenMonthIndex = addZero(chosenMonthIndex);
                 chosenDay = addZero(chosenDay);
                 dateInput.val(chosenYear + '-' + chosenMonthIndex + '-' + chosenDay);
+
+                function addZero(number) {
+                    if(number < 10) {
+                        return '0' + number.toString();
+                    } else {
+                        return number.toString();
+                    }
+                }
             });
+        }
+
+        function toggleDatePicker() {
+            var label = $('label[for="' + $(this).attr('id') + '"]');
+            var datePicker = label.next();
+            label.css('cursor', 'pointer');
+            label.click(function() {
+                $(this).next().fadeToggle('fast');
+                $(this).next().toggleClass('expanded');
+            });
+            $(document).click(function(event) {
+                if($(event.target).closest('.datepicker-wrapper').length) {
+                    return;
+                }
+                if(datePicker.hasClass('expanded')) {
+                    datePicker.removeClass('expanded');
+                    datePicker.fadeOut('fast');
+                }
+                event.stopPropagation();
+            })
         }
 
         //Calendar object constructor
@@ -168,20 +204,12 @@
                 }
                 var monthesRu = ['Январь', 'Февраль', 'Март', 'Апрель', 'Май', 'Июнь', 'Июль', 'Август', 'Сентябрь', 'Октябрь', 'Ноябрь', 'Декабрь'];
                 var monthLocal = monthesRu[currentMonthIndex];
-                return calendar = {
+                return {
                     calendarYear: currentYear,
                     calendarMonth: monthLocal,
                     calendarMonthIndex: currentMonthIndex,
                     calendarBody: calendarTable
                 }
-            }
-        }
-
-        function addZero(number) {
-            if(number < 10) {
-                return '0' + number.toString();
-            } else {
-                return number.toString();
             }
         }
     }
