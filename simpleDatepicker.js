@@ -3,12 +3,18 @@
     $.fn.simpleDatepicker = function(options) {
         var settings = $.extend({}, {
             startYear: new Date().getFullYear(),
-            startMonth: new Date().getMonth() + 1
+            startMonth: new Date().getMonth() + 1,
+            labelText: 'Choose a date',
+            dateRange: false
         }, options);
 
         return this.each(function(){
             if ($(this).is('input[type="date"]')) {
+                $(this).each(createDatePickerWrapper);
                 $(this).each(createDatePicker);
+                if(settings.dateRange) {
+                    $(this).each(createDateRangePicker)
+                }
                 $(this).each(toggleDatePicker);
                 $(this).each(controlDatePicker);
                 $(this).each(chooseDate);
@@ -17,25 +23,57 @@
             }
         });
 
+        function createDatePickerWrapper() {
+            var inputParent = $(this).parent();
+            inputParent.wrap('<div class="datepicker-wrapper">').addClass('datepicker-container');
+            var inputWrapper = $(this).parents('.datepicker-wrapper');
+            inputWrapper.css('display', 'inline-block');
+            $('<span class="datepicker-label">' + settings.labelText + '</span>').prependTo(inputWrapper).css('cursor', 'pointer');
+        }
+
         function createDatePicker() {
             var calendarObject = new MonthCalendar(settings.startYear, settings.startMonth);
-            var calendarWrapper = $(this).parent();
-            calendarWrapper.addClass('datepicker-wrapper').css('display', 'inline-block');
-            calendarWrapper.css('position', 'relative');
-            $('<div class="datepicker"></div>').appendTo(calendarWrapper);
-            var datePickerContainer = calendarWrapper.find('.datepicker');
+            var calendarParent = $(this).parent();
+            calendarParent.css('position', 'relative');
+            $('<div class="datepicker"></div>').appendTo(calendarParent);
+            var datePickerContainer = calendarParent.find('.datepicker');
             $('<div class="calendar-header"></div>').prependTo(datePickerContainer);
             $('<span class="visible-year"><span class="year-down date-control"> < </span><span class="year-value">'
                 + calendarObject.createTable().calendarYear
                 + '</span><span class="year-up date-control"> > </span></span>').prependTo(datePickerContainer.find('.calendar-header'));
-
             $('<span class="visible-month"><span class="month-down date-control"> < </span><span class="month-value">'
                 + calendarObject.createTable().calendarMonth
                 + '</span><span class="month-up date-control"> > </span></span>').appendTo(datePickerContainer.find('.calendar-header'));
             $('<div class="calendar-table">' + calendarObject.createTable().calendarBody + '</div>').appendTo(datePickerContainer);
-            calendarWrapper.find(".datepicker").css('position', 'absolute').hide();
-            calendarWrapper.find('.date-control').css('cursor', 'pointer');
+            if(settings.dateRange) {
+                calendarParent.css('float', 'left');
+            } else {
+                calendarParent.css('position', 'absolute');
+                $(this).parent().hide();
+            }
+            calendarParent.find('.date-control').css('cursor', 'pointer');
             $(this).hide();
+            $('label[for="' + $(this).attr('id') + '"]').hide();
+        }
+
+        function createDateRangePicker() {
+            var initialDatePicker = $(this).parent();
+            var dateRangePickerWrapper = $(this).parents('.datepicker-wrapper');
+            initialDatePicker.clone().appendTo(dateRangePickerWrapper);
+            var cloneDatePicker = initialDatePicker.next();
+            var dateRangePickerItems = dateRangePickerWrapper.find('.datepicker-container');
+            var initialDatePickerId = initialDatePicker.attr('id');
+            dateRangePickerItems.wrapAll('<div class="date-range-picker">');
+            var dateRangePicker = $('.date-range-picker');
+            dateRangePicker.hide().css('position', 'absolute');
+            if(initialDatePickerId.length) {
+                initialDatePicker.attr('id', initialDatePickerId + '1');
+                cloneDatePicker.attr('id', initialDatePickerId + '2');
+            }
+            initialDatePicker.children('input').attr('id', 'date-from');
+            cloneDatePicker.children('input').attr('id', 'date-to');
+            cloneDatePicker.children('input').each(controlDatePicker);
+            cloneDatePicker.children('input').each(chooseDate);
         }
 
         function controlDatePicker() {
@@ -102,8 +140,6 @@
             }
         }
 
-
-
         function chooseDate() {
             var calendarTable = $(this).parent().find('.calendar-table');
             var monthValue = $(this).parent().find('.month-value');
@@ -113,7 +149,6 @@
                 var chosenMonth = monthValue.text();
                 var chosenDay = $(this).text();
                 var dateInput = $(this).parents('.datepicker').prevAll('input');
-                console.log(dateInput);
                 var chosenMonthIndex;
                 var monthList = ['Январь', 'Февраль', 'Март', 'Апрель', 'Май', 'Июнь', 'Июль', 'Август', 'Сентябрь', 'Октябрь', 'Ноябрь', 'Декабрь'];
                 for(var i = 0; i < monthList.length; i++) {
@@ -125,7 +160,6 @@
                 chosenMonthIndex = addZero(chosenMonthIndex);
                 chosenDay = addZero(chosenDay);
                 dateInput.val(chosenYear + '-' + chosenMonthIndex + '-' + chosenDay);
-
                 function addZero(number) {
                     if(number < 10) {
                         return '0' + number.toString();
@@ -137,12 +171,11 @@
         }
 
         function toggleDatePicker() {
-            var label = $('label[for="' + $(this).attr('id') + '"]');
+            var label = $(this).parents('.datepicker-wrapper').children('.datepicker-label');
             var datePicker = label.next();
-            label.css('cursor', 'pointer');
             label.click(function() {
-                $(this).next().fadeToggle('fast');
-                $(this).next().toggleClass('expanded');
+                datePicker.fadeToggle('fast');
+                datePicker.toggleClass('expanded');
             });
             $(document).click(function(event) {
                 if($(event.target).closest('.datepicker-wrapper').length) {
