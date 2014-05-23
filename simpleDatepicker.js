@@ -87,6 +87,7 @@
         cloneDateInput.addClass('date-to');
         cloneDateInput.each(controlDatePicker);
         cloneDateInput.each(chooseDate);
+        cloneDatePicker.find('td:not(.not-current-month)').addClass('disabled-day');
       }
 
       function controlDatePicker() {
@@ -116,7 +117,6 @@
             var calendarTo = $(this).parents('.date-range-picker').find('.date-to').parent();
             var calendarYearFrom = calendarFrom.find('.year-value');
             var calendarYearTo = calendarTo.find('.year-value');
-            var calendarMonthFrom = calendarFrom.find('.month-value');
             var calendarMonthTo = calendarTo.find('.month-value');
             var calendarTableTo = calendarTo.find('.calendar-table');
             var switcherDown = calendarTo.find('.date-control-down');
@@ -124,15 +124,18 @@
               switcherDown.addClass('date-control-disabled');
               var controlledCalendar = shiftDate({
                 year: calendarYearFrom.text() - 1,
-                  month: getMonthIndex(calendarMonthFrom.text()),
-                  shiftYear: true,
-                  direction: true
+                month: getMonthIndex(calendarMonthTo.text()),
+                shiftYear: true,
+                direction: true
               });
               calendarYearTo.text(controlledCalendar.calendarYear);
               calendarMonthTo.text(controlledCalendar.calendarMonth);
               calendarTableTo.html(controlledCalendar.calendarBody);
+              calendarTo.find('td').addClass('disabled-day');
+              $(this).parents('.datepicker-wrapper').find('.datepicker-label').text(settings.labelText);
               } else {
                 switcherDown.removeClass('date-control-disabled');
+                calendarTo.find('td').removeClass('disabled-day');
               }
             }
           }
@@ -185,8 +188,10 @@
             var switcherDown = cloneCalendar.find('.month-down');
             if(startMonthIndex >= cloneMonthIndex && initialYearValue === cloneYearValue) {
               switcherDown.addClass('date-control-disabled');
+              cloneCalendar.find('td').addClass('disabled-day');
             } else {
               switcherDown.removeClass('date-control-disabled');
+              cloneCalendar.find('td').removeClass('disabled-day');
             }
         }
 
@@ -276,18 +281,16 @@
               addSeparator(labelFrom, labelFrom);
             }
 
+            /*Disable unavaiable dates in date range picker*/
+
             if(dateInput.hasClass('date-from')) {
               var cloneCalendar = dateInput.parents('.date-range-picker').find('.date-to').parent();
               var cloneCalendarCells = cloneCalendar.find('td:not(.not-current-month)');
-              var cloneYearText = cloneCalendar.find('.year-value').text();
-              var cloneMonthText = cloneCalendar.find('.month-value').text();
-              if(cloneYearText === chosenYear && cloneMonthText === chosenMonth) {
-                for(var cell = 0; cell < cloneCalendarCells.length; cell++) {
-                  if(cloneCalendarCells.eq(cell).text() < $(this).text()) {
-                    cloneCalendarCells.eq(cell).addClass('disabled-day');
-                  } else {
-                    cloneCalendarCells.eq(cell).removeClass('disabled-day');
-                  }
+              for(var cell = 0; cell < cloneCalendarCells.length; cell++) {
+                if(parseInt(cloneCalendarCells.eq(cell).text()) < parseInt($(this).text())) {
+                  cloneCalendarCells.eq(cell).addClass('disabled-day');
+                } else {
+                  cloneCalendarCells.eq(cell).removeClass('disabled-day');
                 }
               }
             }
