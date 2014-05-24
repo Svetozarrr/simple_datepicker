@@ -6,7 +6,9 @@
       startMonth: new Date().getMonth() + 1,
       labelText: 'Choose a date',
       lang: 'en',
-      dateRange: false
+      dateRange: false,
+      fixedRange: false,
+      fixedRangeInner: $(this).parent()
     }, options);
 
     var monthes = {
@@ -17,7 +19,7 @@
     var week = {
       ru: ['пн', 'вт', 'ср', 'чт', 'пт', 'сб', 'вс'],
       en: ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun']
-    }
+    };
 
     return this.each(function(){
       if ($(this).is('input[type="date"]')) {
@@ -25,6 +27,10 @@
         $(this).each(createDatePicker);
         if(settings.dateRange) {
           $(this).each(createDateRangePicker);
+          if(settings.fixedRange) {
+            $(this).each(createFixedRange);
+            $(this).each(setFixedRange);
+          }
         }
         $(this).each(toggleDatePicker);
         $(this).each(controlDatePicker);
@@ -97,6 +103,73 @@
       cloneDateInput.each(changeDatepickerLabel);
     }
 
+    function createFixedRange() {
+      $('<ul class="fixed-range"></ul>').appendTo(settings.fixedRangeInner);
+      var fixedRangeList = settings.fixedRangeInner.children('.fixed-range');
+      $('<li class="today fixed-range-item"><a href="javascript:void(0)">За сегодня</a></li>').prependTo(fixedRangeList);
+      $('<li class="this-week fixed-range-item"><a href="javascript:void(0)">За неделю</a></li>').appendTo(fixedRangeList);
+      $('<li class="this-month fixed-range-item"><a href="javascript:void(0)">За месяц</a></li>').appendTo(fixedRangeList);
+    }
+
+    function setFixedRange() {
+      var fixedRanger = settings.fixedRangeInner.children('.fixed-range');
+      var fixedRangerLink = fixedRanger.children('.fixed-range-item').children('a');
+      var inputTo;
+      var inputFrom;
+
+      inputFrom = $(this);
+      inputTo = $(this).parents('.datepicker-wrapper').find('.date-to');
+
+      fixedRangerLink.click(function() {
+        var currentDate = new Date();
+        var linkInner = $(this).parent();
+        var currentDateString = getDateString(currentDate.getFullYear(), currentDate.getMonth(), currentDate.getDate());
+        var dateStringFrom;
+        setInputValue(inputTo, currentDateString);
+        if(linkInner.hasClass('today')) {
+          setInputValue(inputFrom, inputTo.val());
+        } else if(linkInner.hasClass('this-week')){
+          dateStringFrom = getDateString(currentDate.getFullYear(), currentDate.getMonth(), currentDate.getDate() - 7);
+          setInputValue(inputFrom, dateStringFrom);
+        } else if(linkInner.hasClass('this-month')) {
+          dateStringFrom = getDateString(currentDate.getFullYear(), currentDate.getMonth() - 1, currentDate.getDate());
+          setInputValue(inputFrom, dateStringFrom);
+        }
+
+        var calendarTo = $(inputTo).next();
+        var calendarToMonth = calendarTo.find('.month-value');
+        var calendarToYear = calendarTo.find('.year-value');
+        var calendarToTable = calendarTo.find('.calendar-table');
+
+        switchDatepicker({
+          year: currentDate.getFullYear(),
+          month: currentDate.getMonth() + 1,
+          direction: false,
+          yearInner: calendarToYear,
+          monthInner: calendarToMonth,
+          tableInner: calendarToTable
+        });
+
+      });
+      inputFrom.change(function() {
+        var dateFrom = new Date(inputFrom.val());
+
+        var calendarFrom = $(inputFrom).next();
+        var calendarFromMonth = calendarFrom.find('.month-value');
+        var calendarFromYear = calendarFrom.find('.year-value');
+        var calendarFromTable = calendarFrom.find('.calendar-table');
+
+        switchDatepicker({
+          year: dateFrom.getFullYear(),
+          month: dateFrom.getMonth() + 1,
+          direction: false,
+          yearInner: calendarFromYear,
+          monthInner: calendarFromMonth,
+          tableInner: calendarFromTable
+        });
+      });
+    }
+
     function controlDatePicker() {
       var controlSwitcher = $(this).parent();
 
@@ -111,15 +184,14 @@
         var yearValue = $(this).parent().find('.year-value');
         var currentMonthValue = $(this).parents('.calendar-header').find('.month-value');
         var calendarTable = $(this).parents('.calendar-header').next();
-        var calendarObject;
-        calendarObject = shiftDate({
+        switchDatepicker({
           year: yearValue.text(),
-          month: getMonthIndex(currentMonthValue.text()),
+          month: monthes[settings.lang].indexOf(currentMonthValue.text()),
           shiftYear: true,
-          direction: event.data.direction
+          direction: event.data.direction,
+          yearInner: yearValue,
+          tableInner: calendarTable
         });
-        yearValue.text(calendarObject.calendarYear);
-        calendarTable.html(calendarObject.calendarBody);
         if(settings.dateRange) {
           var calendarFrom = $(this).parents('.date-range-picker').find('.date-from').parent();
           var calendarTo = $(this).parents('.date-range-picker').find('.date-to').parent();
@@ -130,15 +202,16 @@
           var switcherDown = calendarTo.find('.date-control-down');
           if(calendarYearFrom.text() >= calendarYearTo.text()) {
             switcherDown.addClass('date-control-disabled');
-            var controlledCalendar = shiftDate({
+            switchDatepicker({
               year: calendarYearFrom.text() - 1,
-              month: getMonthIndex(calendarMonthTo.text()),
+              month: monthes[settings.lang].indexOf(calendarMonthTo.text()),
               shiftYear: true,
-              direction: true
+              direction: true,
+              yearInner: calendarYearTo,
+              monthInner: calendarMonthTo,
+              tableInner: calendarTableTo
             });
-            calendarYearTo.text(controlledCalendar.calendarYear);
-            calendarMonthTo.text(controlledCalendar.calendarMonth);
-            calendarTableTo.html(controlledCalendar.calendarBody);
+
             calendarTo.find('td').addClass('disabled-day');
             $(this).parents('.datepicker-wrapper').find('.datepicker-label').text(settings.labelText);
           } else {
@@ -152,45 +225,43 @@
         var monthValue = $(this).parent().find('.month-value');
         var yearValue = $(this).parents('.calendar-header').find('.year-value');
         var calendarTable = $(this).parents('.calendar-header').next();
-        var calendarObject = shiftDate({
+        switchDatepicker({
           year: yearValue.text(),
-          month: getMonthIndex(monthValue.text()),
-          shiftMonth: true,
-          direction: event.data.direction
+          month: monthes[settings.lang].indexOf(monthValue.text()),
+          direction: event.data.direction,
+          yearInner: yearValue,
+          monthInner: monthValue,
+          tableInner: calendarTable
         });
-        monthValue.text(calendarObject.calendarMonth);
-        yearValue.text(calendarObject.calendarYear);
-        calendarTable.html(calendarObject.calendarBody);
         if(settings.dateRange) {
           if($(this).parents('.datepicker').prev().hasClass('date-from')) {
             var controlCalendar = $(this).parents('.datepicker-container').next();
             var controlMonthValue = controlCalendar.find('.month-value');
             var controlYearValue = controlCalendar.find('.year-value');
             var controlCalendarTable = controlCalendar.find('.calendar-table');
-            var initialMonthIndex = getMonthIndex(monthValue.text());
-            var controlMonthIndex = getMonthIndex(controlMonthValue.text());
+            var initialMonthIndex = monthes[settings.lang].indexOf(monthValue.text());
+            var controlMonthIndex = monthes[settings.lang].indexOf(controlMonthValue.text());
             var correction = 0;
             if(initialMonthIndex === 0) {
               correction = 1;
             }
             if((initialMonthIndex > controlMonthIndex && yearValue.text() === controlYearValue.text()) ||
               correction && yearValue.text() > controlYearValue.text()) {
-              var controlCalendarObject = shiftDate({
-                year:  controlYearValue.text(),
+              switchDatepicker({
+                year: controlYearValue.text(),
                 month: controlMonthIndex,
-                shiftMonth: true,
-                direction: true
+                direction: true,
+                yearInner: controlYearValue,
+                monthInner: controlMonthValue,
+                tableInner: controlCalendarTable
               });
-              controlMonthValue.text(controlCalendarObject.calendarMonth);
-              controlYearValue.text(controlCalendarObject.calendarYear);
-              controlCalendarTable.html(controlCalendarObject.calendarBody);
             }
           }
         }
         var initialCalendar = $(this).parents('.date-range-picker').find('.date-from').parent();
-        var startMonthIndex = getMonthIndex(initialCalendar .find('.month-value').text());
+        var startMonthIndex = monthes[settings.lang].indexOf(initialCalendar .find('.month-value').text());
         var cloneCalendar = $(this).parents('.date-range-picker').find('.date-to').parent();
-        var cloneMonthIndex = getMonthIndex(cloneCalendar.find('.month-value').text());
+        var cloneMonthIndex = monthes[settings.lang].indexOf(cloneCalendar.find('.month-value').text());
         var initialYearValue = initialCalendar.find('.year-value').text();
         var cloneYearValue = cloneCalendar.find('.year-value').text();
         var switcherDown = cloneCalendar.find('.month-down');
@@ -203,53 +274,6 @@
         }
       }
 
-      function refreshMonthIndex(year, month) {
-        switch (month) {
-          case 0 :
-            month += 12;
-            year--;
-            break;
-          case 13 :
-            month -= 12;
-            year++;
-            break;
-        }
-        return [year, month];
-      }
-
-      function shiftDate(shiftSettings) {
-        shiftSettings.month++;
-        var refreshedDate;
-        if(shiftSettings.shiftYear) {
-          if(shiftSettings.direction) {
-            shiftSettings.year++;
-          } else {
-            shiftSettings.year--;
-          }
-        } else {
-          if(shiftSettings.direction) {
-            shiftSettings.month++;
-            refreshedDate = refreshMonthIndex(shiftSettings.year, shiftSettings.month);
-            shiftSettings.year = refreshedDate[0];
-            shiftSettings.month = refreshedDate[1];
-          } else {
-            shiftSettings.month--;
-            refreshedDate = refreshMonthIndex(shiftSettings.year, shiftSettings.month);
-            shiftSettings.year = refreshedDate[0];
-            shiftSettings.month = refreshedDate[1];
-          }
-        }
-        return new MonthCalendar(shiftSettings.year, shiftSettings.month);
-      }
-
-      function getMonthIndex(monthString) {
-        for(var monthIndex = 0; monthIndex < monthes[settings.lang].length; monthIndex++) {
-          if(monthString === monthes[settings.lang][monthIndex]) {
-            break;
-          }
-        }
-        return monthIndex;
-      }
     }
 
     function chooseDate() {
@@ -261,19 +285,9 @@
         var chosenMonth = monthValue.text();
         var chosenDay = $(this).text();
         var dateInput = $(this).parents('.datepicker').prevAll('input');
-        var chosenMonthIndexString;
-        var monthList = monthes[settings.lang];
-        for(var chosenMonthIndex = 0; chosenMonthIndex < monthList.length; chosenMonthIndex++) {
-          if(chosenMonth === monthList[chosenMonthIndex]) {
-            chosenMonthIndexString = chosenMonthIndex + 1;
-            break;
-          }
-        }
-        chosenMonthIndexString = addZero(chosenMonthIndexString);
-        chosenDay = addZero(chosenDay);
-        dateInput.val(chosenYear + '-' + chosenMonthIndexString + '-' + chosenDay).trigger('change');
+        var chosenMonthIndexString = monthes[settings.lang].indexOf(chosenMonth);
 
-        /*Display chosen date range or single date (if !settings.dateRange)*/
+        setInputValue(dateInput, getDateString(chosenYear, chosenMonthIndexString, chosenDay));
 
         if(settings.dateRange) {
 
@@ -291,20 +305,29 @@
             }
           }
         }
-
-        function addZero(number) {
-          if(number < 10) {
-            return '0' + number.toString();
-          } else {
-            return number.toString();
-          }
-        }
       });
+    }
+
+    function getDateString(year, monthIndex, day) {
+      var monthIndexString = addZero(monthIndex + 1);
+      var dayString = addZero(day);
+      return year + '-' + monthIndexString + '-' + dayString;
+    }
+
+    function addZero(number) {
+      if(number < 10) {
+        return '0' + number.toString();
+      } else {
+        return number.toString();
+      }
+    }
+
+    function setInputValue(input, value) {
+      input.val(value).trigger('change');
     }
 
     function changeDatepickerLabel() {
       $(this).change(function() {
-        var dateValue = $(this).val();
         var pickerLabel = $(this).parents('.datepicker-wrapper').children('.datepicker-label');
         var chosenDate = new Date($(this).val());
         var dateLit = chosenDate.getDate() + ' ' + monthes[settings.lang][chosenDate.getMonth()] + ' ' + chosenDate.getFullYear();
@@ -338,6 +361,69 @@
           }
         }
       });
+    }
+
+    function switchDatepicker(switchSettings) {
+      var calendarObject = shiftDate({
+        year: switchSettings.year,
+        month: switchSettings.month,
+        shiftYear: switchSettings.shiftYear,
+        direction: switchSettings.direction
+      });
+
+      renderCalendar({
+        calendar: calendarObject,
+        yearInner: switchSettings.yearInner,
+        monthInner: switchSettings.monthInner,
+        tableInner: switchSettings.tableInner
+      });
+    }
+
+    function refreshMonthIndex(year, month) {
+      switch (month) {
+        case 0 :
+          month += 12;
+          year--;
+          break;
+        case 13 :
+          month -= 12;
+          year++;
+          break;
+      }
+      return [year, month];
+    }
+
+    function shiftDate(shiftSettings) {
+      shiftSettings.month++;
+      var refreshedDate;
+      if(shiftSettings.shiftYear) {
+        if(shiftSettings.direction) {
+          shiftSettings.year++;
+        } else {
+          shiftSettings.year--;
+        }
+      } else {
+        if(shiftSettings.direction) {
+          shiftSettings.month++;
+          refreshedDate = refreshMonthIndex(shiftSettings.year, shiftSettings.month);
+          shiftSettings.year = refreshedDate[0];
+          shiftSettings.month = refreshedDate[1];
+        } else {
+          shiftSettings.month--;
+          refreshedDate = refreshMonthIndex(shiftSettings.year, shiftSettings.month);
+          shiftSettings.year = refreshedDate[0];
+          shiftSettings.month = refreshedDate[1];
+        }
+      }
+      return new MonthCalendar(shiftSettings.year, shiftSettings.month);
+    }
+
+    function renderCalendar(renderedSettings) {
+      if(renderedSettings.monthInner) {
+        renderedSettings.monthInner.text(renderedSettings.calendar.calendarMonth);
+      }
+      renderedSettings.yearInner.text(renderedSettings.calendar.calendarYear);
+      renderedSettings.tableInner.html(renderedSettings.calendar.calendarBody);
     }
 
     function toggleDatePicker() {
