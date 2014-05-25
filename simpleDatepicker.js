@@ -8,7 +8,8 @@
       lang: 'en',
       dateRange: false,
       fixedRange: false,
-      fixedRangeInner: $(this).parent()
+      fixedRangeInner: $(this).parent(),
+      showInLabel: false
     }, options);
 
     var monthes = {
@@ -35,7 +36,9 @@
         $(this).each(toggleDatePicker);
         $(this).each(controlDatePicker);
         $(this).each(chooseDate);
-        $(this).each(changeDatepickerLabel);
+        if(settings.showInLabel) {
+            $(this).each(changeDatepickerLabel);
+        }
       } else {
         console.error('Illegal choice');
       }
@@ -100,7 +103,9 @@
       cloneDatePicker.find('td:not(.not-current-month)').addClass('disabled-day');
       cloneDateInput.each(controlDatePicker);
       cloneDateInput.each(chooseDate);
-      cloneDateInput.each(changeDatepickerLabel);
+      if(settings.showInLabel) {
+        cloneDateInput.each(changeDatepickerLabel);
+      }
     }
 
     function createFixedRange() {
@@ -437,7 +442,7 @@
         datePicker.toggleClass('expanded');
       });
       $(document).click(function(event) {
-        if($(event.target).closest('.datepicker-wrapper').length) {
+        if($(event.target).closest('.datepicker-wrapper').length || $(event.target).closest('td').length) {
           return;
         }
         if(datePicker.hasClass('expanded')) {
