@@ -87,11 +87,11 @@
       dateRangePickerItems.wrapAll('<div class="date-range-picker">');
       var dateRangePicker = $('.date-range-picker');
       dateRangePicker.hide().css('position', 'absolute');
-      if(initialDatePickerId.length) {
+      if(initialDatePickerId) {
         initialDatePicker.attr('id', initialDatePickerId + '1');
         cloneDatePicker.attr('id', initialDatePickerId + '2');
       }
-      if(inputId.length){
+      if(inputId){
         cloneDateInput.attr('id', inputId + '-to');
       }
       cloneDatePicker.find('.date-control-down').addClass('date-control-disabled');
@@ -114,17 +114,16 @@
     function setFixedRange() {
       var fixedRanger = settings.fixedRangeInner.children('.fixed-range');
       var fixedRangerLink = fixedRanger.children('.fixed-range-item').children('a');
-      var inputTo;
-      var inputFrom;
-
-      inputFrom = $(this);
-      inputTo = $(this).parents('.datepicker-wrapper').find('.date-to');
+      var inputFrom = $(this);
+      var inputTo = $(this).parents('.datepicker-wrapper').find('.date-to');
 
       fixedRangerLink.click(function() {
         var currentDate = new Date();
         var linkInner = $(this).parent();
         var currentDateString = getDateString(currentDate.getFullYear(), currentDate.getMonth(), currentDate.getDate());
         var dateStringFrom;
+        $(this).addClass('current-range');
+        linkInner.siblings().children().removeClass('current-range');
         setInputValue(inputTo, currentDateString);
         if(linkInner.hasClass('today')) {
           setInputValue(inputFrom, inputTo.val());
@@ -286,6 +285,10 @@
         var chosenDay = $(this).text();
         var dateInput = $(this).parents('.datepicker').prevAll('input');
         var chosenMonthIndexString = monthes[settings.lang].indexOf(chosenMonth);
+        if(settings.fixedRange) {
+          var fixedRangeLink = $('.fixed-range').find('a');
+          fixedRangeLink.removeClass('current-range');
+        }
 
         setInputValue(dateInput, getDateString(chosenYear, chosenMonthIndexString, chosenDay));
 
