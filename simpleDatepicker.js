@@ -61,10 +61,10 @@
       $('<div class="calendar-header"></div>').prependTo(datePickerContainer);
       $('<span class="visible-year"><span class="year-down date-control date-control-down"> < </span><span class="year-value">' +
         calendarObject.calendarYear +
-        '</span><span class="year-up date-control date-control-up"> > </span></span>').prependTo(datePickerContainer.find('.calendar-header'));
+        '</span><span class="year-up date-control date-control-up"> > </span></span>').appendTo(datePickerContainer.find('.calendar-header'));
       $('<span class="visible-month"><span class="month-down date-control date-control-down"> < </span><span class="month-value">' +
         calendarObject.calendarMonth +
-        '</span><span class="month-up date-control date-control-up"> > </span></span>').appendTo(datePickerContainer.find('.calendar-header'));
+        '</span><span class="month-up date-control date-control-up"> > </span></span>').prependTo(datePickerContainer.find('.calendar-header'));
       $('<div class="calendar-table">' + calendarObject.calendarBody + '</div>').appendTo(datePickerContainer);
       if(settings.dateRange) {
         calendarParent.css('float', 'left');
@@ -304,11 +304,16 @@
           if(dateInput.hasClass('date-from')) {
             var cloneCalendar = dateInput.parents('.date-range-picker').find('.date-to').parent();
             var cloneCalendarCells = cloneCalendar.find('td:not(.not-current-month)');
-            for(var cell = 0; cell < cloneCalendarCells.length; cell++) {
-              if(parseInt(cloneCalendarCells.eq(cell).text()) < parseInt($(this).text())) {
-                cloneCalendarCells.eq(cell).addClass('disabled-day');
-              } else {
-                cloneCalendarCells.eq(cell).removeClass('disabled-day');
+            var cloneCalendarYear = cloneCalendar.find('.year-value');
+            var cloneCalendarMonth = cloneCalendar.find('.month-value');
+            if(parseInt(chosenYear) === parseInt(cloneCalendarYear.text()) &&
+              monthes[settings.lang].indexOf(chosenMonth) === monthes[settings.lang].indexOf(cloneCalendarMonth.text())) {
+              for(var cell = 0; cell < cloneCalendarCells.length; cell++) {
+                if(parseInt(cloneCalendarCells.eq(cell).text()) < parseInt($(this).text())) {
+                  cloneCalendarCells.eq(cell).addClass('disabled-day');
+                } else {
+                  cloneCalendarCells.eq(cell).removeClass('disabled-day');
+                }
               }
             }
           }
@@ -460,7 +465,7 @@
       var currentDate = new Date(year, monthIndex);
       var calendarTable = '<table><tr>';
       for(var weekDay = 0; weekDay < week[settings.lang].length; weekDay++) {
-        calendarTable += '<td>' + week[settings.lang][weekDay] + '</td>';
+        calendarTable += '<th>' + week[settings.lang][weekDay] + '</th>';
       }
       calendarTable += '</tr>';
       for(var i = 0, j = getCurrentDay(currentDate) - 1; i < getCurrentDay(currentDate); i++, j--) {
